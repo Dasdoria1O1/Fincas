@@ -26,50 +26,50 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JWTAuthorizationFilter extends OncePerRequestFilter {
 
-	public static final String HEADER = "Authorization";
-	public static final String PREFIX = "Bearer ";
+    public static final String HEADER = "Authorization";
+    public static final String PREFIX = "Bearer ";
 
-	@Autowired
-	private CustomUserDetailsService userDetailsService;
+    @Autowired
+    private CustomUserDetailsService userDetailsService;
 
-	@Autowired
-	private JWTTokenService jwtTokenService;
+    @Autowired
+    private JWTTokenService jwtTokenService;
 
-	@Override
-	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain) throws ServletException, IOException {
-		try {
-			if (existeJWTToken(request)) {
-				Claims claims = validarToken(request);
-				if (claims.get("authorities") != null) {
-					String username = getUsername(request);
-					UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-					UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-					auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-					SecurityContextHolder.getContext().setAuthentication(auth);
-				} else {
-					SecurityContextHolder.clearContext();
-				}
-			} else {
-				SecurityContextHolder.clearContext();
-			}
-			chain.doFilter(request, response);
-		} catch (ExpiredJwtException | UnsupportedJwtException | MalformedJwtException | SignatureException e) {
-			response.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
-		}
-	}
+    @Override
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain) throws ServletException, IOException {
+        try {
+            if (existeJWTToken(request)) {
+                Claims claims = validarToken(request);
+                if (claims.get("authorities") != null) {
+                    String username = getUsername(request);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } else {
+                    SecurityContextHolder.clearContext();
+                }
+            } else {
+                SecurityContextHolder.clearContext();
+            }
+            chain.doFilter(request, response);
+        } catch (ExpiredJwtException | UnsupportedJwtException | MalformedJwtException | SignatureException | IllegalArgumentException e) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
+        }
+    }
 
-	private Claims validarToken(HttpServletRequest request) {
-		String jwtToken = request.getHeader(HEADER).replace(PREFIX, "");
-		return jwtTokenService.decodeToken(jwtToken);
-	}
+    private Claims validarToken(HttpServletRequest request) {
+        String jwtToken = request.getHeader(HEADER).replace(PREFIX, "");
+        return jwtTokenService.decodeToken(jwtToken);
+    }
 
-	private String getUsername(HttpServletRequest request) {
-		String jwtToken = request.getHeader(HEADER).replace(PREFIX, "");
-		return jwtTokenService.getUsername(jwtToken);
-	}
+    private String getUsername(HttpServletRequest request) {
+        String jwtToken = request.getHeader(HEADER).replace(PREFIX, "");
+        return jwtTokenService.getUsername(jwtToken);
+    }
 
-	private boolean existeJWTToken(HttpServletRequest request) {
-		String authenticationHeader = request.getHeader(HEADER);
-		return authenticationHeader != null && authenticationHeader.startsWith(PREFIX);
-	}
+    private boolean existeJWTToken(HttpServletRequest request) {
+        String authenticationHeader = request.getHeader(HEADER);
+        return authenticationHeader != null && authenticationHeader.startsWith(PREFIX);
+    }
 }

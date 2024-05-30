@@ -45,6 +45,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(ignoreSpecificRequests()).permitAll()
+                .requestMatchers("/reservaciones/**").authenticated()  // Protege las rutas de reservaciones
                 .anyRequest().authenticated())
             .addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
 
